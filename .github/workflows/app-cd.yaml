@@ -1,0 +1,30 @@
+name: Deploy (CD) fake-product/fake-dotnet-api
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths:
+      - 'score.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'score.yaml'
+
+jobs:
+  deploy:
+    name: Deploy fake-product/fake-dotnet-api
+    # raw directive in template here 
+    if: ${{ github.actor != 'idp-scaffolder[bot]' }}
+    # endraw directive in template here 
+    uses: Utlendingsdirektoratet/shared-workflows/.github/workflows/deploy-humanitec.yaml@main
+    secrets: inherit
+    with:
+      product-id: "fake-product"
+      app-id: "fake-dotnet-api"
+      environment: "utv"

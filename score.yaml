@@ -1,0 +1,35 @@
+apiVersion: score.dev/v1b1
+metadata:
+  name: fake-dotnet-api
+containers:
+  main:
+    image: idptpacr.azurecr.io/fake-product/fake-dotnet-api:latest
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "200Mi"
+      limits:
+        # it is recommended not to use cpu limits
+        memory: "200Mi"
+    livenessProbe:
+      httpGet:
+        path: /healthcheck
+        port: 8080
+    readinessProbe:
+      httpGet:
+        path: /healthcheck
+        port: 8080
+service:
+  ports:
+    http:
+      port: 8080
+      targetPort: 8080
+resources:
+  dns:
+    type: dns
+  route:
+    type: route
+    params:
+      host: ${resources.dns.host}
+      path: /
+      port: 8080

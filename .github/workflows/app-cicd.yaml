@@ -1,0 +1,39 @@
+name: Test, analyze, build and deploy (CI/CD) fake-product/fake-dotnet-api
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths-ignore:
+      - 'score.yaml'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'score.yaml'
+
+permissions:
+  contents: write
+
+jobs:
+  testAndAnalyze:
+    name: Test and analyze fake-product/fake-dotnet-api
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        run: echo "test and analyze application"
+
+  buildAndDeploy:
+    name: Build and deploy fake-product/fake-dotnet-api
+    needs:
+      - testAndAnalyze
+    uses: Utlendingsdirektoratet/shared-workflows/.github/workflows/build-deploy-humanitec.yaml@main
+    secrets: inherit
+    with:
+      product-id: "fake-product"
+      app-id: "fake-dotnet-api"
+      environment: "utv"
