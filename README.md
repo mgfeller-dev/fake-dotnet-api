@@ -137,6 +137,15 @@ Executing `curl http://127.0.0.1:8080/upstream` will return something similar to
 }
 ```
 
+## JWT config
+
+Export the following environment variables, e.g. using a `direnv` `.envrc`-file:
+```shell
+# JWT Settings
+export JwtSettings__Issuer="https://dev-b25uzcek87i4o2um.eu.auth0.com/"
+export JwtSettings__Audience="api://fake-api-csharp"
+``` 
+
 ## Quotes data
 
 The application includes a `quotes` endpoint to store and retrieve quotes.

@@ -2,6 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
+using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -26,6 +30,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Authority = builder.Configuration["JwtSettings:Issuer"];
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -33,35 +38,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                builder.Configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured")))
+            ValidAudience = builder.Configuration["JwtSettings:Audience"]
         };
-
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("JWT token received in request");
+                logger.LogInformation("JWT bearer event message received");
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("JWT token validated successfully for user: {User}", context.Principal?.Identity?.Name);
+                if (context.SecurityToken is JsonWebToken jwtToken)
+                {
+                    var jwtSub = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+                    logger.LogInformation("Token validated successfully for subject: {Sub}", jwtSub);
+                }
+                else
+                {
+                    logger.LogWarning("Token validated successfully - not a JsonWebToken, actual type: {Type}",
+                        context.SecurityToken?.GetType().FullName);
+                }
+
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogError("JWT token validation failed: {Error}", context.Exception.Message);
+                logger.LogWarning("Authentication failed: {Exception}", context.Exception);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("JWT authentication challenge issued: {Error}", context.Error);
+                logger.LogWarning("Authentication challenge issued: {Error}", context.Error);
                 return Task.CompletedTask;
             }
         };
