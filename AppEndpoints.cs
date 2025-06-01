@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Authorization;
 
 public static class AppEndpoints
 {
@@ -11,7 +12,7 @@ public static class AppEndpoints
             ResponseWriter = new HealthCheckResponseWriter(appVersion).WriteResponse
         });
 
-        app.MapGet("/info", AppInfo.Create);
+        app.MapGet("/info", [Authorize] (IConfiguration config) => AppInfo.Create(config));
 
         app.MapGet("/unauthorized", Results.Unauthorized);
 
